@@ -54,7 +54,7 @@ contract Plantoid {
         }
 
         weiRaised += donation;
-        babies[babiesCnt].repSystem.mint(msg.sender, int(donation));
+        babies[babiesCnt].repSystem.mint(msg.sender, donation);
 
         // Create new Baby:
         if (weiRaised >= threshold) {
@@ -62,9 +62,9 @@ contract Plantoid {
             newBaby(babiesCnt);
             weiRaised = 0;
             babies[babiesCnt].repSystem = new Reputation();
-            if (overflow != 0) {
+            /*if (overflow != 0) {
                 _fund(overflow);
-            }
+            }*/
         }
     }
 }

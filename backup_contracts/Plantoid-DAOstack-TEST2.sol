@@ -1,8 +1,8 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.19;
 
 import "@daostack/infra/contracts/Reputation.sol";
 import "@daostack/infra/contracts/VotingMachines/GenesisProtocol.sol";
-import "@daostack/infra/contracts/token/ERC827/ERC827Token.sol";
+import "openzeppelin-solidity/contracts/token/ERC827/ERC827Token.sol";
 
 
 
@@ -30,7 +30,9 @@ contract Proxy  {
 
     uint[14] public genesisProtocolParams;
 
-    constructor(address _owner, address _artist, uint _threshold) public {
+
+
+    function Proxy(address _owner, address _artist, uint _threshold) public {
         ownerX = _owner;
         artist = _artist;
         threshold = _threshold;
@@ -45,6 +47,10 @@ contract Proxy  {
 
     event Upgraded(address indexed implementation);
     event FallingBack(address indexed implemantion, bytes data);
+
+
+
+
 
     function implementation() public view returns (address) {
         return _implementation;
@@ -124,11 +130,6 @@ contract Plantoid is GenesisProtocolExecuteInterface, GenesisProtocolCallbacksIn
     // - 3: Reproduction complete
     modifier ifStatus (uint _id, uint _status) {
         require(seeds[_id].status == _status);
-        _;
-    }
-
-    modifier onlyVotingMachine() {
-        require(msg.sender == VoteMachine,"only VotingMachine");
         _;
     }
 
@@ -346,28 +347,37 @@ contract Plantoid is GenesisProtocolExecuteInterface, GenesisProtocolCallbacksIn
         return seeds[id].reputation.totalSupply();
     }
 
-    function mintReputation(uint _amount,address _beneficiary,bytes32 pid) external onlyVotingMachine returns(bool) {
+    function mintReputation(uint _amount,address _beneficiary,bytes32 pid) external returns(bool) {
       uint id = pid2id[pid];
+      require(msg.sender == VoteMachine);
       return seeds[id].reputation.mint(_beneficiary,_amount);
     }
 
-    function burnReputation(uint _amount,address _beneficiary,bytes32 pid) external onlyVotingMachine returns(bool) {
+    function burnReputation(uint _amount,address _beneficiary,bytes32 pid) external returns(bool) {
       uint id = pid2id[pid];
+      require(msg.sender == VoteMachine);
       return seeds[id].reputation.burn(_beneficiary,_amount);
     }
 
     function reputationOf(address _owner,bytes32 pid) view external returns(uint) {
         uint id = pid2id[pid];
         uint rep = seeds[id].reputation.balanceOfAt(_owner, seeds[id].proposals[pid].block);
+     //   emit ReputationOf(_owner, rep);
         return rep;
     }
 
-    function stakingTokenTransfer(StandardToken _stakingToken, address _beneficiary,uint _amount,bytes32) external onlyVotingMachine returns(bool) {
-      return _stakingToken.transfer(_beneficiary,_amount);
+    function stakingTokenTransfer(StandardToken _stakingToken, address _beneficiary,uint _amount,bytes32) external returns(bool) {
+      require(msg.sender == VoteMachine);
+      ERC827Token stakingTok = ERC827Token(GenesisProtocol(VoteMachine).stakingToken());
+      return stakingTok.transfer(_beneficiary,_amount);
     }
 
-    function executeProposal(bytes32 pid,int _decision) external onlyVotingMachine returns(bool) {
+    function executeProposal(bytes32 pid,int _decision) external returns(bool) {
+      require(msg.sender == VoteMachine);
       emit Execution(pid, 0, _decision);
       return execute(pid, 0, _decision);
     }
+
+
+
 }
